@@ -1,2 +1,0 @@
-Hold-out fixtures live here. NEVER mount this directory into a dream sandbox.
-The bench runner reads it from outside the container and returns only a verdict.
