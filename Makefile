@@ -15,3 +15,7 @@ namespace:
 count-lines:
 	@echo "=== Lines of code in bin/ and ops/ ==="
 	@wc -l bin/* ops/*.json ops/profile/* ops/systemd/* ops/ssh/* 2>/dev/null || true
+
+install-host:
+	@echo "Execute with root privileges: sudo ops/install.sh"
+	sudo ops/install.sh
