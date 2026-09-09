@@ -213,7 +213,7 @@ def make_decisions(source_bank: str, facts: Iterable[Fact]) -> list[RouteDecisio
         if not fact.memory_id or not fact.text or fact.state != "valid" or fact.fact_type == "observation":
             continue
         content = redact_sensitive(fact.text).strip(); target = classify_fact(content)
-        if target.needs_review: continue
+        if target.needs_review or target.bank_id == source_bank: continue
         decisions.append(RouteDecision(source_bank, fact.memory_id, target, content, _stable_hash(f"{target.bank_id}\0{content}")))
     return decisions
 
