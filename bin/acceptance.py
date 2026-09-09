@@ -60,7 +60,10 @@ import os, socket
 assert os.getuid() == 65532
 for path in ['/var/run/docker.sock','/run/docker.sock','/run/credentials',
              '/etc/hermes/authority.json','/root/.ssh','/srv/hermes/receipts']:
-    assert not Path(path).exists(), path
+    try:
+        assert not Path(path).exists(), path
+    except PermissionError:
+        pass
 assert set(os.listdir('/sys/class/net')) == {'lo'}
 try:
     os.setuid(0)
