@@ -1,0 +1,24 @@
+# Hermes Profile: hermes-control
+# Isolamento estrito: backend terminal SSH com forced-command
+# Nenhuma credencial de sincronização, nenhum MCP, nenhuma skill mutável
+
+terminal:
+  backend: ssh
+  ssh:
+    host: 127.0.0.1
+    port: 2222
+    user: hermes-author
+    key_path: /etc/hermes/ssh/id_ed25519_control
+
+toolsets:
+  - terminal
+
+# Desativação de extensões e caminhos de escrita autônoma
+memory:
+  provider: none
+
+plugins:
+  enabled: false
+
+sync:
+  enabled: false

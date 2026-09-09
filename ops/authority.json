@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "trust_levels": {
+    "0": {
+      "name": "proposal_only",
+      "allowed_effects": ["read_snapshot", "run_local_tests", "produce_artifact"],
+      "publication_allowed": false,
+      "auto_merge_allowed": false,
+      "reversion_required": false
+    },
+    "1": {
+      "name": "open_pr",
+      "allowed_effects": ["read_snapshot", "run_local_tests", "produce_artifact", "open_pr"],
+      "publication_allowed": true,
+      "auto_merge_allowed": false,
+      "reversion_required": true
+    },
+    "2": {
+      "name": "bounded_merge",
+      "allowed_effects": ["read_snapshot", "run_local_tests", "produce_artifact", "open_pr", "merge_pr"],
+      "publication_allowed": true,
+      "auto_merge_allowed": true,
+      "allowed_merge_classes": ["documentation_outside_constitution", "mechanical_lint_covered"],
+      "reversion_required": true
+    }
+  },
+  "permanently_human_paths": [
+    "ops/authority.json",
+    "ops/systemd/**",
+    "ops/ssh/**",
+    "ops/images.lock",
+    ".github/CODEOWNERS",
+    ".github/workflows/**",
+    ".github/scripts/**",
+    "Dockerfile*",
+    "docker-compose*",
+    "package-lock.json",
+    "pnpm-lock.yaml",
+    "yarn.lock",
+    "pyproject.toml",
+    "requirements*.txt",
+    "migrations/**",
+    "alembic/**",
+    ".hermes/jobs/**",
+    ".hermes/decisions/**",
+    ".hermes/receipts/**"
+  ],
+  "protected_branches": {
+    "hermes-somnus": ["main"],
+    "EDP-Helios": ["develop", "main"]
+  }
+}

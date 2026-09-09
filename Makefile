@@ -1,16 +1,17 @@
-.PHONY: test lint check install
+PYTHON ?= python3
+.PHONY: test legacy namespace count-lines
 
 test:
-	python3 -m pytest -q
+	$(PYTHON) -m unittest discover -s tests -p 'test_smoke.py' -v
 
-lint:
-	shellcheck scripts/*.sh
-	python3 -m compileall -q somnus
+legacy:
+	@test -n "$(LEGACY_SOURCE)" || (echo 'Supply LEGACY_SOURCE=/absolute/path/to/extracted/bundle'; exit 3)
+	$(PYTHON) tests/legacy_regressions.py --source "$(LEGACY_SOURCE)" -v
 
-check: lint test
-	@echo "somnus: all checks passed"
+namespace:
+	@test -n "$(SSH_TARGET)" || (echo 'Supply SSH_TARGET for the disposable acceptance lab'; exit 3)
+	$(PYTHON) bin/acceptance.py namespace --ssh-target "$(SSH_TARGET)"
 
-install:
-	install -m 755 scripts/somnus-*.sh $(HOME)/.hermes/scripts/
-	cp -r skills/somnus-* $(HOME)/.hermes/skills/
-	@echo "Now merge config.example.yaml into ~/.hermes/config.yaml"
+count-lines:
+	@echo "=== Lines of code in bin/ and ops/ ==="
+	@wc -l bin/* ops/*.json ops/profile/* ops/systemd/* ops/ssh/* 2>/dev/null || true

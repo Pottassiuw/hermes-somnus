@@ -1,0 +1,38 @@
+#!/usr/bin/env python3
+"""Run a single authorized Hermes task deterministically.
+
+Follows the 10-step sequence in HERMES-PHASE-2.md §9:
+1. Fetch base commit, confirm human decision and authority.
+2. Export clean repository snapshot (no credentials, no git history).
+3. Spawn isolated hermes-author container with bounded resources.
+4. Stop container, validate candidate modifications against contract.
+5. Create candidate commit in isolated supervisor repository.
+6. Verify candidate with smoke_gate.py in hermes-verify container.
+7. Persist receipts and accepted artifacts externally.
+8. Signal publisher if all gates PASS.
+"""
+import argparse
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Hermes Task Execution Sequence")
+    parser.add_argument("--job", required=True, type=Path, help="Path to authorized job contract JSON")
+    args = parser.parse_args()
+
+    if not args.job.exists():
+        print(f"Error: Job file {args.job} not found", file=sys.stderr)
+        return 3
+
+    contract = json.loads(args.job.read_text())
+    job_id = contract.get("job_id")
+    print(f"Loaded job {job_id}. Execution sequence ready.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

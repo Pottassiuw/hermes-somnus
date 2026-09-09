@@ -1,0 +1,2 @@
+# Restrição absoluta de execução: apenas chave de controle, local, forced-command
+restrict,command="/usr/local/libexec/hermes-enter.sh",from="127.0.0.1" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI... hermes-control@pi
