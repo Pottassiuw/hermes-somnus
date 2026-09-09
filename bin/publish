@@ -20,11 +20,17 @@ def main():
         return 3
 
     receipt = json.loads(args.receipt.read_text())
-    if receipt.get("result") != "PASS":
-        print(f"Error: Receipt status is {receipt.get('result')}, refusing to publish.", file=sys.stderr)
+    status = receipt.get("status") or receipt.get("result")
+    if status != "PASS":
+        print(f"Error: Receipt status is {status}, refusing to publish.", file=sys.stderr)
         return 1
 
-    print(f"Receipt for commit {receipt.get('commit')} verified. Publishing eligible.")
+    commit = receipt.get("identity", {}).get("commit") or receipt.get("commit")
+    if not commit:
+        print("Error: Commit SHA missing from receipt identity.", file=sys.stderr)
+        return 1
+
+    print(f"Receipt for commit {commit} verified. Publishing eligible.")
     return 0
 
 
