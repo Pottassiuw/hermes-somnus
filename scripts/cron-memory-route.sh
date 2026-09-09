@@ -19,6 +19,12 @@ if [ -z "${HINDSIGHT_API_URL:-}" ] || [ "$HINDSIGHT_API_URL" = "http://127.0.0.1
   export HINDSIGHT_API_URL="http://hindsight-app:8888"
 fi
 
+export HINDSIGHT_TIMEOUT_S=90
 export SOMNUS_ROUTER_APPLY=1
 export PYTHONPATH="$SOMNUS_ROOT${PYTHONPATH:+:$PYTHONPATH}"
-exec python3 "$SOMNUS_ROOT/scripts/memory-route.py" --apply --batch-size "${SOMNUS_ROUTER_BATCH_SIZE:-25}" --quiet
+
+# Controlled batch size (5) and max-facts (10) per run to keep Pi latency and memory safe
+BATCH_SIZE="${SOMNUS_ROUTER_BATCH_SIZE:-5}"
+MAX_FACTS="${SOMNUS_ROUTER_MAX_FACTS:-10}"
+
+exec python3 "$SOMNUS_ROOT/scripts/memory-route.py" --apply --batch-size "$BATCH_SIZE" --max-facts "$MAX_FACTS" --quiet

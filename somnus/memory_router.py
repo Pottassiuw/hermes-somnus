@@ -110,7 +110,7 @@ class HindsightTransport(Protocol):
 
 class HindsightClient:
     """Stdlib-only Hindsight HTTP client. Error bodies are never logged."""
-    def __init__(self, base_url: str, api_key: str = "", timeout: float = 20.0) -> None:
+    def __init__(self, base_url: str, api_key: str = "", timeout: float = 90.0) -> None:
         self.base_url, self.api_key, self.timeout = base_url.rstrip("/"), api_key, timeout
     def request(self, method: str, path: str, *, query: Mapping[str, Any] | None = None, payload: Mapping[str, Any] | None = None) -> Any:
         url = f"{self.base_url}{path}"
@@ -263,4 +263,4 @@ class MemoryRouter:
         return report
 
 def env_client() -> HindsightClient:
-    return HindsightClient(os.environ.get("HINDSIGHT_API_URL") or os.environ.get("HINDSIGHT_URL") or "http://127.0.0.1:8888", os.environ.get("HINDSIGHT_API_KEY", ""), float(os.environ.get("HINDSIGHT_TIMEOUT_S", "20")))
+    return HindsightClient(os.environ.get("HINDSIGHT_API_URL") or os.environ.get("HINDSIGHT_URL") or "http://127.0.0.1:8888", os.environ.get("HINDSIGHT_API_KEY", ""), float(os.environ.get("HINDSIGHT_TIMEOUT_S", "90")))
