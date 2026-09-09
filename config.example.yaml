@@ -1,0 +1,134 @@
+# Somnus configuration — merge this `somnus:` block into ~/.hermes/config.yaml
+#
+# Every default here is conservative on purpose. Loosening a threshold after a
+# month of clean runs is easy; explaining a night that rewrote forty skills is not.
+
+somnus:
+  # Opt-in, like the upstream Dreaming proposal (Hermes issue #29431).
+  # Leave this false until Phase 0 of the roadmap has run clean for a week.
+  enabled: false
+  home: "~/.hermes/somnus"
+  ideate_top_k: 5
+
+  triggers:
+    schedule: "0 3 * * *"
+    scheduled_hour: 3
+    min_idle_minutes: 90
+    quiet_minutes: 60             # never fire within N minutes of user activity
+    episodic_backlog_turns: 200
+    open_failure_threshold: 3
+    novelty_fraction: 0.4
+    on_session_compress: true     # compaction is the moment information is lost
+
+  guards:
+    max_load1: 2.0
+    max_temp_c: 70                # a throttling Pi produces garbage slowly
+    min_free_mem_mb: 700
+    min_free_disk_pct: 15
+
+  budget:                          # IR-5 — bounded by budget, not by ambition
+    daily_cap_usd: 5.0
+    monthly_cap_usd: 80.0
+    max_wall_minutes: 120
+    max_llm_calls: 255
+
+  phases:
+    triage:      { wall_minutes: 15, llm_calls: 20,  model: aux }
+    # NEVER a tiny model here: small backbones emit up to 30% format errors on
+    # memory operations, and the resulting corruption is silent (arXiv:2602.19320).
+    consolidate: { wall_minutes: 25, llm_calls: 60,  model: main }
+    ideate:      { wall_minutes: 10, llm_calls: 20,  model: main }
+    build:       { wall_minutes: 40, llm_calls: 120, model: main }
+    bench:       { wall_minutes: 20, llm_calls: 30,  model: aux }
+
+  bench:
+    min_pairs: 20                 # the n=5 trap: 4-of-5 happens ~19% by chance
+    repeats: 3
+    alpha: 0.01
+    min_effect: 0.02              # pre-registered minimum detectable effect
+    require_replication: true     # promote only after a 2nd independent night
+    guard_regression_policy: hard_reject
+
+  sandbox:
+    backend: docker
+    image: "python:3.11-slim"
+    network: none                 # none | llm_only | allowlist
+    memory_mb: 512                # drop to 384 on a 4 GB Pi
+    cpus: 1.0
+    pids_limit: 256
+    read_only_rootfs: true
+    timeout_s: 900
+
+  memory:
+    provider: hindsight
+    shadow_bank_suffix: "-shadow" # consolidate into shadow; promote after utility check
+    region_max_entries: 40
+    min_pair_distance: 0.55       # cross-domain ideation must pair DISTANT regions
+    promote_to_memory_md: staged  # staged | never  (uses memory.write_approval)
+    max_description_similarity: 0.85
+
+  # Explicit bank routing. Normal Hermes retain remains on agent-hermes;
+  # scripts/memory-route-apply.sh is the only writer for cross-bank migration.
+  routing:
+    source_bank: "agent-hermes"
+    apply: false
+    page_size: 100
+    max_pages: 20
+    require_readback: true
+    invalidate_source: true
+
+  reflect:
+    enabled: false
+    schedule: "0 4 * * 1"
+    bank: "repo-edp-helios"
+    budget: "low"
+    max_tokens: 1200
+    include_facts: true
+    include_tool_calls: false
+    exclude_mental_models: true
+
+  maintenance:
+    enabled: false
+    schedule: "0 3 * * *"
+    vacuum: false
+    volatile_retention_days: 7
+
+  identity:                        # IR-6 — the invariant that survives the night
+    manifest_paths:
+      - "~/.hermes/skills/.bundled_manifest"
+      - "~/.hermes/skills/.hub/lock.json"
+      - "~/.hermes/prompts/core.md"
+    on_mismatch: abort_and_rollback
+
+  promote:
+    mode: pr                       # pr | staging
+    repo: "~/.hermes/hermes-agent"
+    branch_prefix: "somnus/"
+    canary_sessions: 10
+    auto_revert_on_guard_trip: true
+
+  report:
+    deliver: "local"               # any Hermes cron delivery target
+    include_rejected: true         # the most informative section of the digest
+
+# ---------------------------------------------------------------------------
+# Related Hermes settings Somnus depends on. Set these too.
+# ---------------------------------------------------------------------------
+
+memory:
+  write_approval: true             # dream-phase memory writes are staged, not applied
+
+curator:
+  enabled: true
+  interval_hours: 168
+  min_idle_hours: 2
+  backup:
+    enabled: true
+    keep: 5
+
+cron:
+  model_drift_guard: true          # refuse unpinned jobs when the default model moves
+  max_parallel_jobs: 1             # a Pi should not run two dream cycles at once
+
+plugins:
+  hook_callback_timeout: 30        # pre_tool_call fails CLOSED on timeout — correct here

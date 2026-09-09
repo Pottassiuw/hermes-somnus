@@ -1,0 +1,35 @@
+manifest_version: 2
+api_version: 1
+name: somnus
+version: 0.1.0
+description: >-
+  Idle-time self-improvement for Hermes Agent: log triage, memory consolidation
+  by region rewriting, falsifiable ideation, sandboxed prototyping, paired A/B
+  benchmarking, and PR-first promotion. Reuses Hermes cron, hooks, Curator and
+  terminal backends rather than replacing them.
+author: "(you)"
+license: MIT
+homepage: https://github.com/you/hermes-somnus
+tags: [memory, cron, self-improvement, sandbox, evaluation]
+
+provides_tools:
+  - somnus
+
+provides_hooks:
+  - pre_tool_call
+  - post_tool_call
+  - on_session_start
+  - on_session_end
+
+# No hard third-party requirements: stdlib plus pyyaml (already a Hermes
+# dependency). `jsonschema` is optional and only used by the test suite.
+python_dependencies: []
+
+config_schema:
+  config_path:
+    type: str
+    default: "~/.hermes/config.yaml"
+    description: "Where to read the `somnus:` block from."
+
+# Somnus never enables itself. Turn it on with `somnus.enabled: true` in
+# config.yaml, after Phase 0 of the roadmap has run clean for a week.

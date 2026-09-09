@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hermes-somnus/schemas/evolved_skill_spec.schema.json",
+  "title": "EvolvedSkillSpec",
+  "description": "A skill candidate with its verification fixtures attached. IR-7: a skill without fixtures is a note, not a skill.",
+  "type": "object",
+  "required": ["name", "version", "provenance", "skill_md", "fixtures", "retrieval_hygiene", "gates", "lineage"],
+  "properties": {
+    "name": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,48}$" },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+
+    "provenance": {
+      "type": "object",
+      "required": ["derived_from", "outcome_labels", "distinct_sessions"],
+      "properties": {
+        "derived_from": {
+          "type": "array", "items": { "type": "string" }, "minItems": 3,
+          "description": "A skill is a parameterized control-flow pattern recurring across traces, not a transcript of one good run (Skill-DisCo, arXiv:2606.26669)."
+        },
+        "outcome_labels": {
+          "type": "array",
+          "items": { "enum": ["success", "failure", "corrected"] },
+          "description": "REQUIRED. Labeled distillation measurably outperforms unlabeled when failures are in the source pool (arXiv:2608.14036)."
+        },
+        "distinct_sessions": { "type": "integer", "minimum": 3 },
+        "control_flow_signature": { "type": "string" }
+      }
+    },
+
+    "skill_md": {
+      "type": "object",
+      "required": ["frontmatter", "when_to_use", "procedure", "pitfalls", "verification"],
+      "properties": {
+        "frontmatter": {
+          "type": "object",
+          "description": "Hermes SKILL.md YAML: name, description, version, metadata.hermes.{tags,category,requires_toolsets,requires_tools}.",
+          "required": ["name", "description", "version"],
+          "properties": {
+            "name": { "type": "string" },
+            "description": { "type": "string", "minLength": 20 },
+            "version": { "type": "string" },
+            "platforms": { "type": "array", "items": { "type": "string" } },
+            "metadata": { "type": "object" }
+          }
+        },
+        "when_to_use": {
+          "type": "string", "minLength": 40,
+          "description": "The retrieval contract. Fix this first when retrieval precision is poor — semantic confusability hurts more than pool size."
+        },
+        "quick_reference": { "type": "string" },
+        "procedure": { "type": "string" },
+        "pitfalls": {
+          "type": "array", "items": { "type": "string" },
+          "description": "One entry per FailureRecord.defense this skill absorbs."
+        },
+        "verification": { "type": "string" }
+      }
+    },
+
+    "fixtures": {
+      "type": "array", "minItems": 1,
+      "description": "IR-7. At least one case that fails without the skill and passes with it.",
+      "items": { "$ref": "fixture_case.schema.json" }
+    },
+
+    "retrieval_hygiene": {
+      "type": "object",
+      "required": ["max_description_similarity"],
+      "properties": {
+        "max_description_similarity": {
+          "type": "number", "maximum": 0.85,
+          "description": "Cosine against every existing skill description. Above 0.75 the correct action is a skill_patch, not a new skill: retrieval precision falls 29.6% -> 3.3% between pool sizes 5 and 100."
+        },
+        "overlap_checked_against": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+
+    "contracts": {
+      "type": "array",
+      "description": "External dependencies and their expected response shapes. Probed nightly; a shape change is what turns silent drift into a dated signal.",
+      "items": {
+        "type": "object",
+        "required": ["dependency", "probe"],
+        "properties": {
+          "dependency": { "type": "string" },
+          "version_seen": { "type": "string" },
+          "probe": { "type": "string", "description": "Shell command; exit 0 means the contract holds." },
+          "expect": { "type": "object" }
+        }
+      }
+    },
+
+    "gates": {
+      "type": "object",
+      "properties": {
+        "size_bytes": { "type": "integer", "maximum": 15360 },
+        "lint_passed": { "type": "boolean" },
+        "security_scan": { "enum": ["clean", "warn", "dangerous"] },
+        "baseline_verdict": { "type": "object" }
+      }
+    },
+
+    "lineage": {
+      "type": "object",
+      "properties": {
+        "parent_version": { "type": ["string", "null"] },
+        "hypothesis_id": { "type": "string" },
+        "ledger_entry": { "type": "string" },
+        "rollback_cmd": { "type": "string" }
+      }
+    },
+
+    "lifecycle": {
+      "type": "object",
+      "description": "Mirrors the Hermes Curator state machine so the two agree.",
+      "properties": {
+        "state": { "enum": ["active", "stale", "archived", "quarantined", "deprecated"] },
+        "created_by": { "const": "agent" },
+        "pinned": { "type": "boolean", "default": false }
+      }
+    }
+  }
+}

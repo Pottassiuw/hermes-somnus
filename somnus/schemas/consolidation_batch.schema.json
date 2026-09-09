@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hermes-somnus/schemas/consolidation_batch.schema.json",
+  "title": "ConsolidationBatch",
+  "description": "One region rewrite: B* = (B \\ R) u S. The region is read-only evidence; the operator emits a complete replacement set. Omission IS deletion — that is the design (Auto-Dreamer, arXiv:2605.20616).",
+  "type": "object",
+  "required": ["id", "started_at", "region", "replacement_set", "invariants", "size_delta"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^cb_[0-9a-f]{12}$" },
+    "started_at": { "type": "string", "format": "date-time" },
+
+    "region": {
+      "type": "object",
+      "required": ["selector", "member_ids"],
+      "properties": {
+        "selector": { "enum": ["newly_written", "recently_retrieved", "entity_scoped",
+                               "contradiction_cluster", "low_utility"] },
+        "member_ids": { "type": "array", "items": { "type": "string" } },
+        "bank_id": { "type": "string", "description": "Write to the shadow bank first; promote after the utility check." }
+      }
+    },
+
+    "evidence_window": {
+      "type": "object",
+      "properties": {
+        "episodic_from": { "type": "string", "format": "date-time" },
+        "episodic_to": { "type": "string", "format": "date-time" },
+        "session_ids": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+
+    "replacement_set": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type", "content", "provenance", "confidence_tier"],
+        "properties": {
+          "id": { "type": "string" },
+          "type": { "enum": ["semantic", "procedural", "entity_state", "mental_model"] },
+          "content": { "type": "string", "maxLength": 2000 },
+          "provenance": {
+            "type": "array", "items": { "type": "string" }, "minItems": 1,
+            "description": "Episodic event ids. No ancestry, no fact — break #1 against the recursive hallucination loop."
+          },
+          "confidence_tier": {
+            "enum": ["user_stated", "tool_observed", "model_inferred"],
+            "description": "NEVER merge across tiers — break #2. When combining, keep the weakest tier."
+          },
+          "valid_from": { "type": "string", "format": "date-time" },
+          "valid_to": { "type": ["string", "null"], "format": "date-time" }
+        }
+      }
+    },
+
+    "omitted": {
+      "type": "array",
+      "description": "Audit trail of what the rewrite dropped, and why.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "reason": { "enum": ["redundant", "superseded", "contradicted", "low_utility", "noise"] }
+        }
+      }
+    },
+
+    "contradictions_escalated": {
+      "type": "array",
+      "description": "Two user_stated facts in direct conflict. Surfaced to the human, never auto-resolved — an agent silently picking one is how you get confidently wrong.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "a": { "type": "string" },
+          "b": { "type": "string" },
+          "question": { "type": "string" }
+        }
+      }
+    },
+
+    "utility_check": {
+      "type": "object",
+      "description": "Cheap proxy for Auto-Dreamer's counterfactual reward term r_cf: mask the region, re-run fixtures, measure the drop.",
+      "properties": {
+        "fixture_ids": { "type": "array", "items": { "type": "string" } },
+        "score_with": { "type": "number" },
+        "score_without": { "type": "number" },
+        "score_replacement": { "type": "number" },
+        "accepted": { "type": "boolean" },
+        "reason": { "type": "string" }
+      }
+    },
+
+    "invariants": {
+      "type": "object",
+      "required": ["identity_hash_before", "identity_hash_after"],
+      "description": "IR-6 (arXiv:2607.01988). The semantic layer is excluded from the manifest hash BY CONSTRUCTION, so byte-equality across passes is checkable rather than merely promised. Mismatch aborts the cycle.",
+      "properties": {
+        "identity_hash_before": { "type": "string" },
+        "identity_hash_after": { "type": "string" },
+        "manifest_paths": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+
+    "health": {
+      "type": "object",
+      "description": "Small models emit up to 30% format errors during memory operations, corrupting long-term memory silently (arXiv:2602.19320). Above 10% the phase aborts.",
+      "properties": {
+        "attempted_writes": { "type": "integer" },
+        "rejected_writes": { "type": "integer" },
+        "reject_rate": { "type": "number" }
+      }
+    },
+
+    "size_delta": {
+      "type": "object",
+      "description": "Read this every morning. Positive trend with flat fixture scores means your consolidator is an archivist, not a compressor.",
+      "properties": {
+        "tokens_before": { "type": "integer" },
+        "tokens_after": { "type": "integer" },
+        "entries_before": { "type": "integer" },
+        "entries_after": { "type": "integer" }
+      }
+    }
+  }
+}

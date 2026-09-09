@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hermes-somnus/schemas/failure_record.schema.json",
+  "title": "FailureRecord",
+  "description": "The atom of the system. Shape follows Hermes issue #41963: [trigger] -> [error] -> [consequence] -> [defense], where `defense` becomes a permanent guard fixture.",
+  "type": "object",
+  "required": ["id", "signature", "first_seen", "occurrences", "error", "evidence", "status"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^fr_[0-9a-f]{12}$" },
+    "signature": {
+      "type": "string",
+      "description": "Normalized error + tool + task class. The clustering key — without normalization every failure looks unique and the recurring-failure trigger never fires."
+    },
+    "first_seen": { "type": "string", "format": "date-time" },
+    "last_seen": { "type": "string", "format": "date-time" },
+    "occurrences": { "type": "integer", "minimum": 1 },
+    "severity": { "enum": ["cosmetic", "degraded", "blocking", "unsafe"] },
+    "task_class": { "type": "string" },
+
+    "trigger": { "type": "string", "description": "The state or action immediately before the error." },
+    "error": { "type": "string", "description": "Verbatim error or divergence description." },
+    "consequence": { "type": "string", "description": "What the USER lost — not what the stack trace said." },
+    "defense": {
+      "type": ["string", "null"],
+      "description": "A single mechanical check that would have prevented this. Must be assertable by a script. Becomes a guard fixture."
+    },
+
+    "locus": {
+      "type": "object",
+      "description": "Point of commitment from counterfactual replay (arXiv:2606.08275): the LATEST step whose effect CI excludes zero.",
+      "properties": {
+        "step_index": { "type": "integer" },
+        "method": { "enum": ["last_error", "sibling_divergence", "resample_contrastive", "shapley"] },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+
+    "environment": {
+      "type": "object",
+      "properties": {
+        "hermes_version": { "type": "string" },
+        "model": { "type": "string" },
+        "provider": { "type": "string" },
+        "toolsets": { "type": "array", "items": { "type": "string" } },
+        "os": { "type": "string" },
+        "arch": { "type": "string" }
+      }
+    },
+
+    "evidence": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["session_id", "turn_range"],
+        "properties": {
+          "session_id": { "type": "string" },
+          "turn_range": { "type": "array", "items": { "type": "integer" }, "minItems": 2, "maxItems": 2 },
+          "excerpt": { "type": "string", "maxLength": 2000 }
+        }
+      }
+    },
+
+    "status": { "enum": ["open", "hypothesized", "in_progress", "fixed", "wontfix", "deprecated"] },
+    "resolution": {
+      "type": "object",
+      "properties": {
+        "hypothesis_id": { "type": "string" },
+        "pr_url": { "type": "string" },
+        "fixed_at": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}
