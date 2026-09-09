@@ -1,0 +1,15 @@
+# sshd dedicado para hermes-control -> hermes-author
+Port 2222
+ListenAddress 127.0.0.1
+Protocol 2
+HostKey /etc/hermes/ssh/ssh_host_ed25519_key
+
+AuthorizedKeysFile /etc/hermes/ssh/authorized_keys
+PasswordAuthentication no
+PubkeyAuthentication yes
+KbdInteractiveAuthentication no
+X11Forwarding no
+AllowTcpForwarding no
+AllowAgentForwarding no
+PermitTTY no
+ForceCommand /usr/local/libexec/hermes-enter.sh

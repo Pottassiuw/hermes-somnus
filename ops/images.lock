@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "images": {
+    "hermes-author": {
+      "purpose": "isolated code authoring under UID 65532",
+      "image": "python:3.11-slim@sha256:dummy_to_be_pinned_on_installation",
+      "network": "none",
+      "read_only": true,
+      "user": "65532:65532"
+    },
+    "hermes-verify": {
+      "purpose": "isolated deterministic test verification",
+      "image": "python:3.11-slim@sha256:dummy_to_be_pinned_on_installation",
+      "network": "none",
+      "read_only": true,
+      "user": "65532:65532"
+    }
+  }
+}

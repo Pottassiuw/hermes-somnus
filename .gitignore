@@ -1,0 +1,16 @@
+# Local/runtime state
+.venv/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+*.bak.sqlite
+.env
+.env.*
+reports/
+*.log
+*.egg-info/
