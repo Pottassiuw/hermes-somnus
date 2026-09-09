@@ -26,9 +26,13 @@
   },
   "permanently_human_paths": [
     "ops/authority.json",
+    "ops/install.sh",
+    "ops/profile/**",
     "ops/systemd/**",
     "ops/ssh/**",
     "ops/images.lock",
+    "bin/hermes-enter.sh",
+    "Makefile",
     ".github/CODEOWNERS",
     ".github/workflows/**",
     ".github/scripts/**",
