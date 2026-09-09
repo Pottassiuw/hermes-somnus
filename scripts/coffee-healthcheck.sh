@@ -8,12 +8,8 @@ if [ -z "$URL" ]; then
   exit 0
 fi
 
-headers=()
-if [ -n "${COFFEE_API_KEY:-}" ]; then
-  headers=(-H "Authorization: Bearer ***")
-fi
-
-result="$(curl -sS -o /dev/null -w '%{http_code}|%{content_type}|%{time_total}' --max-time 20 "${headers[@]}" "$URL" 2>/dev/null || printf '000||0')"
+# Use HTTP/1.1 and standard User-Agent to avoid HTTP/2 stream negotiation hangs on enterprise proxies
+result="$(curl -sS -o /dev/null -w '%{http_code}|%{content_type}|%{time_total}' --http1.1 -A 'Mozilla/5.0' --max-time 15 "$URL" 2>/dev/null || printf '000||0')"
 IFS='|' read -r code content_type latency <<<"$result"
 printf 'coffee status=%s content_type=%s latency_s=%s
 ' "$code" "${content_type:-unknown}" "${latency:-unknown}"
