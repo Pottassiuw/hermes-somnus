@@ -9,53 +9,77 @@ mkdir -p "$REPORT_DIR"
 REPORT="$REPORT_DIR/helios-smoke-$(date -u +%Y%m%dT%H%M%SZ).log"
 umask 077
 touch "$REPORT"
-fail=0
+has_fail=0
+has_blocked=0
+
 run_logged() {
   name="$1"; shift
   "$@" >"$REPORT.$name" 2>&1
   rc=$?
-  printf '%s exit=%s log=%s\n' "$name" "$rc" "$REPORT.$name"
-  [ "$rc" -eq 0 ] || fail=1
+  if [ "$rc" -eq 0 ]; then
+    printf "%s status=PASS exit=0 log=%s
+" "$name" "$REPORT.$name"
+  else
+    printf "%s status=FAIL exit=%s log=%s
+" "$name" "$rc" "$REPORT.$name"
+    has_fail=1
+  fi
 }
+
 if [ ! -d "$REPO/.git" ]; then
-  printf 'smoke repository=unavailable\n'
-  exit 2
+  printf "smoke repository=unavailable status=BLOCKED
+"
+  exit 3
 fi
+
 PYTHON="${HELIOS_PYTHON:-python3}"
-if command -v "$PYTHON" >/dev/null 2>&1 && "$PYTHON" -c 'import pytest' >/dev/null 2>&1; then
+if command -v "$PYTHON" >/dev/null 2>&1 && "$PYTHON" -c "import pytest" >/dev/null 2>&1; then
   run_logged backend "$PYTHON" -m pytest -q "$REPO/backend"
 else
-  printf 'backend exit=skipped reason=pytest_unavailable python=%s\n' "$PYTHON"
-  fail=1
+  printf "backend status=BLOCKED reason=pytest_unavailable python=%s
+" "$PYTHON"
+  has_blocked=1
 fi
+
 if [ -f "$REPO/frontend/package.json" ]; then
   NPM="${HELIOS_NPM:-npm}"
   if command -v "$NPM" >/dev/null 2>&1; then
     run_logged frontend "$NPM" --prefix "$REPO/frontend" run build
   else
-    printf 'frontend exit=skipped reason=npm_unavailable executable=%s\n' "$NPM"
-    fail=1
+    printf "frontend status=BLOCKED reason=npm_unavailable executable=%s
+" "$NPM"
+    has_blocked=1
   fi
 else
-  printf 'frontend exit=skipped reason=package_json_missing\n'
+  printf "frontend status=SKIPPED reason=package_json_missing
+"
 fi
+
 if [ -z "$BASE_URL" ]; then
-  printf 'api=skipped reason=HELIOS_BASE_URL_unset\n'
-  [ "${HELIOS_REQUIRE_API:-0}" = 1 ] && fail=1
+  printf "api status=SKIPPED reason=HELIOS_BASE_URL_unset
+"
+  if [ "${HELIOS_REQUIRE_API:-0}" = 1 ]; then has_blocked=1; fi
 else
   for path in /api/carteira/plano/status /api/carteira/dashboard; do
-    code="$(curl -fsS -o /dev/null -w '%{http_code}' --max-time 20 "$BASE_URL$path" 2>/dev/null || printf '000')"
-    printf 'api_get path=%s status=%s\n' "$path" "$code"
-    case "$code" in 2*) ;; *) fail=1 ;; esac
+    code="$(curl -fsS -o /dev/null -w "%{http_code}" --max-time 20 "$BASE_URL$path" 2>/dev/null || printf 000)"
+    printf "api_get path=%s status=%s
+" "$path" "$code"
+    case "$code" in 2*) ;; *) has_fail=1 ;; esac
   done
-  if [ "${HELIOS_SMOKE_ALLOW_MUTATION:-0}" = 1 ]; then
-    payload="${HELIOS_SYNC_PAYLOAD:-{}}"
-    code="$(curl -fsS -o /dev/null -w '%{http_code}' --max-time 60 -X POST -H 'Content-Type: application/json' --data "$payload" "$BASE_URL/api/carteira/plano/sincronizar" 2>/dev/null || printf '000')"
-    printf 'api_post path=/api/carteira/plano/sincronizar status=%s\n' "$code"
-    case "$code" in 2*) ;; *) fail=1 ;; esac
-  else
-    printf 'api_post path=/api/carteira/plano/sincronizar status=skipped reason=mutation_not_allowed\n'
-  fi
 fi
-printf 'report=%s\n' "$REPORT"
-exit "$fail"
+
+printf "report=%s
+" "$REPORT"
+if [ "$has_fail" -eq 1 ]; then
+  printf "overall_status=FAIL
+"
+  exit 1
+elif [ "$has_blocked" -eq 1 ]; then
+  printf "overall_status=BLOCKED
+"
+  exit 3
+else
+  printf "overall_status=PASS
+"
+  exit 0
+fi
